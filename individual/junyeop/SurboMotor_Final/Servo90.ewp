@@ -2261,6 +2261,9 @@
     <file>
         <name>$PROJ_DIR$\system_stm32f4xx.c</name>
     </file>
+    <file>
+        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c</name>
+    </file>
     <projectSettings>
         <general>
             <resolveSourceForBinaries>true</resolveSourceForBinaries>

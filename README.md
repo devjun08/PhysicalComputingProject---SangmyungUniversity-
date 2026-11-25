@@ -17,7 +17,7 @@
 
 ### 준엽 · 서보 모터
 
-IAR EWARM에서 [FINAL.eww](individual/junyeop/SurboMotor_Final/FINAL.eww)를 열면 `ADC.ewp`가 연결됩니다. STM32F4 SPL의 `Libraries/`는 프로젝트 파일 옆에 둡니다. 최신 코드는 PB9(TIM4_CH4)에서 SG90에 90도 PWM을 출력합니다. 통합 코드도 같은 핀과 타이머를 사용합니다.
+IAR EWARM에서 [Servo90.eww](individual/junyeop/SurboMotor_Final/Servo90.eww)를 열면 `Servo90.ewp`가 연결됩니다. STM32F4 SPL의 `Libraries/`는 프로젝트 파일 옆에 둡니다. 최신 코드는 PB9(TIM4_CH4)에서 SG90에 90도 PWM을 출력합니다. 통합 코드도 같은 핀과 타이머를 사용합니다.
 
 ### 시현 · CdS 센서 입력
 

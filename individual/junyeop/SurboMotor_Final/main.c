@@ -1,104 +1,102 @@
 #include "stm32f4xx.h"
 
-#define SERVO_TIMER_HZ       1000000U
-#define SERVO_PERIOD_US      20000U
-#define SERVO_MIN_PULSE_US   1000U
-#define SERVO_MAX_PULSE_US   2000U
-#define SERVO_MAX_ANGLE      180U
-
-static void LED_Init(void)
+static void LED_init(void)
 {
-    GPIO_InitTypeDef gpio;
+    GPIO_InitTypeDef GPIO_InitStructure;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-    GPIO_StructInit(&gpio);
-    gpio.GPIO_Pin = GPIO_Pin_5;
-    gpio.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_Init(GPIOA, &gpio);
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
 }
 
-static void Servo_Init(void)
+static void Servo_GPIO_init(void)
 {
-    GPIO_InitTypeDef gpio;
-    RCC_ClocksTypeDef clocks;
-    TIM_TimeBaseInitTypeDef timer;
-    TIM_OCInitTypeDef pwm;
-    uint32_t timerClockHz;
+    GPIO_InitTypeDef GPIO_InitStructure;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-
-    RCC_GetClocksFreq(&clocks);
-    timerClockHz = clocks.PCLK1_Frequency;
-    /* On the default TIMPRE setting, a divided APB1 doubles the timer clock. */
-    if (clocks.PCLK1_Frequency != clocks.HCLK_Frequency)
-    {
-        timerClockHz *= 2U;
-    }
-
-    TIM_TimeBaseStructInit(&timer);
-    timer.TIM_Prescaler = (uint16_t)(timerClockHz / SERVO_TIMER_HZ - 1U);
-    timer.TIM_Period = SERVO_PERIOD_US - 1U;
-    TIM_TimeBaseInit(TIM4, &timer);
-
-    TIM_OCStructInit(&pwm);
-    pwm.TIM_OCMode = TIM_OCMode_PWM1;
-    pwm.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OC4Init(TIM4, &pwm);
-    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
-
-    GPIO_StructInit(&gpio);
-    gpio.GPIO_Pin = GPIO_Pin_9;
-    gpio.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_TIM4);
-    GPIO_Init(GPIOB, &gpio);
 }
 
-static void Servo_SetAngle(uint16_t angle)
+static void TIM4_Configuration(void)
 {
-    uint32_t pulseUs;
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
-    if (angle > SERVO_MAX_ANGLE)
-    {
-        angle = SERVO_MAX_ANGLE;
-    }
-
-    pulseUs = SERVO_MIN_PULSE_US
-            + ((SERVO_MAX_PULSE_US - SERVO_MIN_PULSE_US) * angle) / SERVO_MAX_ANGLE;
-    TIM_SetCompare4(TIM4, pulseUs);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+    /* TIM4 clock: 16 MHz HSI / 16 = 1 MHz, so one count is 1 us. */
+    TIM_TimeBaseStructure.TIM_Prescaler = 16 - 1;
+    TIM_TimeBaseStructure.TIM_Period = 20000 - 1;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
 }
 
-static void DelayMs(uint32_t milliseconds)
+static void PWM_TIM4_Configuration(void)
 {
-    while (milliseconds > 0U)
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+
+    TIM_OCStructInit(&TIM_OCInitStructure);
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+    TIM_OCInitStructure.TIM_Pulse = 1500; /* SG90 90 degrees: 1.5 ms. */
+    TIM_OC4Init(TIM4, &TIM_OCInitStructure);
+    TIM_Cmd(TIM4, ENABLE);
+}
+
+static void TIM2_Configuration(uint16_t interval_ms)
+{
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+    /* TIM2 clock: 16 MHz HSI / 16000 = 1 kHz. */
+    TIM_TimeBaseStructure.TIM_Prescaler = 16000 - 1;
+    TIM_TimeBaseStructure.TIM_Period = interval_ms - 1;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseInit(TIM2, &TIM_TimeBaseStructure);
+
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+    TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+    TIM_Cmd(TIM2, ENABLE);
+}
+
+void TIM2_IRQHandler(void)
+{
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
     {
-        while ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) == 0U)
-        {
-        }
-        --milliseconds;
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+        GPIO_ToggleBits(GPIOA, GPIO_Pin_5);
     }
 }
 
 int main(void)
 {
-    SystemCoreClockUpdate();
-    SysTick->LOAD = SystemCoreClock / 1000U - 1U;
-    SysTick->VAL = 0U;
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
-
-    LED_Init();
-    Servo_Init();
-    Servo_SetAngle(90U);
-    /* Load the first compare value before starting the PWM output. */
-    TIM_GenerateEvent(TIM4, TIM_EventSource_Update);
-    TIM_Cmd(TIM4, ENABLE);
+    LED_init();
+    Servo_GPIO_init();
+    TIM4_Configuration();
+    PWM_TIM4_Configuration();
+    TIM2_Configuration(500);
 
     while (1)
     {
-        GPIO_SetBits(GPIOA, GPIO_Pin_5);
-        DelayMs(500U);
-
-        GPIO_ResetBits(GPIOA, GPIO_Pin_5);
-        DelayMs(500U);
     }
 }
