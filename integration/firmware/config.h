@@ -1,6 +1,6 @@
 #ifndef INTEGRATION_CONFIG_H
 #define INTEGRATION_CONFIG_H
-/* Existing wiring is retained. Servo wiring is absent from the supplied code. */
+/* Existing wiring is retained, including servo PB9 / TIM4_CH4. */
 #define MOTOR_PWM_COUNTS 800U
 #define MOTOR_HOME_DUTY 80U
 #define MOTOR_PATROL_DUTY 50U

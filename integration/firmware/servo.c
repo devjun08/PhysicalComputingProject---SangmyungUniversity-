@@ -1,66 +1,69 @@
-/* Adapted from Junyeop's SG90 driver, keeping PB9 / TIM4_CH4. */
+/* Lecture-style initialization from the individual SG90 test.
+ * Wiring unchanged: PB9 / TIM4_CH4, 16 MHz HSI, 20 ms PWM period.
+ * TIM2 belongs to timebase.c; the standalone LED test is not duplicated here.
+ */
 #include "stm32f4xx.h"
 #include "config.h"
 #include "servo.h"
-#define SERVO_TIMER_HZ 1000000U
-#define SERVO_PERIOD_US 20000U
-#define SERVO_MIN_PULSE_US 1000U
-#define SERVO_MAX_PULSE_US 2000U
-#define SERVO_MAX_ANGLE 180U
-void Servo_Init(void)
+
+static void Servo_GPIO_init(void)
 {
-    GPIO_InitTypeDef gpio;
-    RCC_ClocksTypeDef clocks;
-    TIM_TimeBaseInitTypeDef timer;
-    TIM_OCInitTypeDef pwm;
-    uint32_t timerClockHz;
+    GPIO_InitTypeDef GPIO_InitStructure;
 
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-
-    RCC_GetClocksFreq(&clocks);
-    timerClockHz = clocks.PCLK1_Frequency;
-    /* On the default TIMPRE setting, a divided APB1 doubles the timer clock. */
-    if (clocks.PCLK1_Frequency != clocks.HCLK_Frequency)
-    {
-        timerClockHz *= 2U;
-    }
-
-    TIM_TimeBaseStructInit(&timer);
-    timer.TIM_Prescaler = (uint16_t)(timerClockHz / SERVO_TIMER_HZ - 1U);
-    timer.TIM_Period = SERVO_PERIOD_US - 1U;
-    TIM_TimeBaseInit(TIM4, &timer);
-
-    TIM_OCStructInit(&pwm);
-    pwm.TIM_OCMode = TIM_OCMode_PWM1;
-    pwm.TIM_OutputState = TIM_OutputState_Enable;
-    TIM_OC4Init(TIM4, &pwm);
-    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
-
-    GPIO_StructInit(&gpio);
-    gpio.GPIO_Pin = GPIO_Pin_9;
-    gpio.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_StructInit(&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_TIM4);
-    GPIO_Init(GPIOB, &gpio);
+}
+
+static void TIM4_Configuration(void)
+{
+    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+    TIM_TimeBaseStructInit(&TIM_TimeBaseStructure);
+    /* TIM4 clock: 16 MHz HSI / 16 = 1 MHz, so one count is 1 us. */
+    TIM_TimeBaseStructure.TIM_Prescaler = 16 - 1;
+    TIM_TimeBaseStructure.TIM_Period = 20000 - 1;
+    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
+}
+
+static void PWM_TIM4_Configuration(void)
+{
+    TIM_OCInitTypeDef TIM_OCInitStructure;
+
+    TIM_OCStructInit(&TIM_OCInitStructure);
+    TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+    TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+    TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+    TIM_OCInitStructure.TIM_Pulse = 1500; /* SG90 90 degrees: 1.5 ms. */
+    TIM_OC4Init(TIM4, &TIM_OCInitStructure);
+    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
     Servo_SetAngle(SERVO_STAND_ANGLE);
     TIM_GenerateEvent(TIM4, TIM_EventSource_Update);
     TIM_Cmd(TIM4, ENABLE);
 }
 
-void Servo_SetAngle(uint16_t angle)
+void Servo_Init(void)
 {
-    uint32_t pulseUs;
-
-    if (angle > SERVO_MAX_ANGLE)
-    {
-        angle = SERVO_MAX_ANGLE;
-    }
-
-    pulseUs = SERVO_MIN_PULSE_US
-            + ((SERVO_MAX_PULSE_US - SERVO_MIN_PULSE_US) * angle) / SERVO_MAX_ANGLE;
-    TIM_SetCompare4(TIM4, pulseUs);
+    Servo_GPIO_init();
+    TIM4_Configuration();
+    PWM_TIM4_Configuration();
 }
 
+void Servo_SetAngle(uint16_t angle)
+{
+    uint32_t pulse_us;
+    if (angle > 180U) angle = 180U;
+    pulse_us = 1000U + (1000U * angle) / 180U;
+    TIM_SetCompare4(TIM4, pulse_us);
+}
 
 void Servo_Stand(void) { Servo_SetAngle(SERVO_STAND_ANGLE); }
 void Servo_Down(void) { Servo_SetAngle(SERVO_DOWN_ANGLE); }
