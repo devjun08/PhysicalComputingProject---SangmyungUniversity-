@@ -4,7 +4,8 @@
 #include "comm.h"
 #include "motor.h"
 #include "servo.h"
-static uint8_t state, homing, released[9];
+#include "hit_detector.h"
+static uint8_t state, homing;
 static uint32_t entered, started;
 static void enter(uint8_t next, uint32_t now)
 {
@@ -16,9 +17,8 @@ static void finish(uint32_t now)
 }
 void Game_Init(uint32_t now)
 {
-    uint8_t i;
     homing = 0U;
-    for (i = 0; i < 9U; ++i) released[i] = 0U;
+    HitDetector_Reset();
     Motor_Stop(); Servo_Stand(); enter(ST_IDLE, now);
 }
 void Game_Command(int command, uint32_t now)
@@ -30,7 +30,7 @@ void Game_Command(int command, uint32_t now)
     else if (command == CMD_START && !homing &&
              (state == ST_IDLE || state == ST_GAMEOVER)) {
         /* Homing stays IDLE on wire: existing PC protocol has no HOMING state. */
-        Servo_Stand(); Motor_Home(now); homing = 1U; enter(ST_IDLE, now);
+        HitDetector_Reset(); Servo_Stand(); Motor_Home(now); homing = 1U; enter(ST_IDLE, now);
     }
 }
 void Game_Update(uint32_t now)
@@ -54,7 +54,10 @@ void Game_Update(uint32_t now)
 #endif
     switch (state) {
     case ST_HIT:
-        if (now - entered >= HIT_BRAKE_MS) { Servo_Down(); enter(ST_DOWN, now); }
+        if (now - entered >= HIT_BRAKE_MS) {
+            if (Servo_Available()) { Servo_Down(); enter(ST_DOWN, now); }
+            else enter(ST_RECOVER, now); /* Detect hits even before pose calibration. */
+        }
         break;
     case ST_DOWN:
         if (now - entered >= TARGET_DOWN_MS) { Servo_Stand(); enter(ST_RECOVER, now); }
@@ -67,25 +70,13 @@ void Game_Update(uint32_t now)
 }
 void Game_Sensors(const uint16_t values[9], uint32_t now)
 {
-    uint8_t i;
+    uint8_t zone;
     Comm_SetAdc(values);
-    for (i = 0; i < 9U; ++i) {
-#if HIT_ACTIVE_HIGH
-        uint8_t clear = values[i] <= HIT_RELEASE_THRESHOLD;
-        uint8_t hit = values[i] >= HIT_THRESHOLD;
-#else
-        uint8_t clear = values[i] >= HIT_RELEASE_THRESHOLD;
-        uint8_t hit = values[i] <= HIT_THRESHOLD;
-#endif
-        if (clear) released[i] = 1U;
-        if (hit && released[i]) {
-            released[i] = 0U;
-            if (HIT_DETECTION_ENABLED && Servo_Available() && state == ST_PATROL && !homing) {
-                uint32_t reaction = now - entered;
-                Motor_Stop();
-                Comm_ReportHit(i + 1U, reaction > 65535U ? 65535U : (uint16_t)reaction);
-                enter(ST_HIT, now);
-            }
-        }
+    zone = HitDetector_Update(values, now);
+    if (HIT_DETECTION_ENABLED && zone && state == ST_PATROL && !homing) {
+        uint32_t reaction = now - entered;
+        Motor_Stop();
+        Comm_ReportHit(zone, reaction > 65535U ? 65535U : (uint16_t)reaction);
+        enter(ST_HIT, now);
     }
 }

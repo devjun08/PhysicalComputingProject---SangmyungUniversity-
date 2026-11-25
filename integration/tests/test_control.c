@@ -5,6 +5,7 @@
 #include "motor.h"
 #include "game.h"
 #include "protocol.h"
+#include "hit_detector.h"
 MockTimer mock_tim;
 unsigned mock_switches;
 static unsigned wire_state, hits, zone, reaction, down_count;
@@ -30,7 +31,7 @@ static void home(uint32_t base)
 }
 int main(void)
 {
-    uint16_t adc[9]={0};
+    uint16_t adc[9]={3800,3800,3800,3800,3800,3800,3800,3800,3800};
     Motor_Init(); Game_Init(0);
     assert(mock_tim.CCR1==0 && mock_tim.CCR2==0);
     Game_Command(CMD_START,0); Game_Command(CMD_END,1);
@@ -39,17 +40,23 @@ int main(void)
     home(20000);
     Game_Command('5',23191); Game_Update(23191);
     assert(mock_tim.CCR1==560);
-    Game_Sensors(adc,23192); adc[2]=3500;
-    Game_Sensors(adc,23200);
+    Game_Sensors(adc,23192); Game_Sensors(adc,23202); Game_Sensors(adc,23212);
+    adc[2]=2400;
+    Game_Sensors(adc,23222); Game_Sensors(adc,23232);
+    assert(hits==0); /* Two scans are insufficient. */
+    Game_Sensors(adc,23242);
 #if HIT_DETECTION_ENABLED
-    assert(wire_state==ST_HIT && hits==1 && zone==3 && reaction==10);
+    assert(wire_state==ST_HIT && hits==1 && zone==3 && reaction==52);
     assert(mock_tim.CCR1==0 && mock_tim.CCR2==0);
-    Game_Update(23300); assert(wire_state==ST_DOWN && down_count==1);
-    Game_Update(24800); assert(wire_state==ST_RECOVER);
-    Game_Update(25100); assert(wire_state==ST_PATROL);
-    Game_Sensors(adc,25101); assert(hits==1); /* persistent light cannot re-hit */
-    adc[2]=0; Game_Sensors(adc,25102);
-    adc[2]=3500; Game_Sensors(adc,25103); assert(hits==2);
+    Game_Update(23342); assert(wire_state==ST_DOWN && down_count==1);
+    Game_Update(24842); assert(wire_state==ST_RECOVER);
+    Game_Update(25142); assert(wire_state==ST_PATROL);
+    Game_Sensors(adc,25152); assert(hits==1); /* persistent light cannot re-hit */
+    adc[2]=3800;
+    Game_Sensors(adc,25162); Game_Sensors(adc,25172); Game_Sensors(adc,25182);
+    adc[2]=2400;
+    Game_Sensors(adc,25192); Game_Sensors(adc,25202); Game_Sensors(adc,25212);
+    assert(hits==2);
 #else
     assert(wire_state==ST_PATROL && hits==0);
 #endif
@@ -74,6 +81,35 @@ int main(void)
         assert(frame[0]==0xa5 && frame[1]==7 && frame[5]==0x12 && frame[6]==0x34);
         assert(frame[23]==0x0a && frame[24]==0xbc && frame[26]==0x5a);
         assert(frame[25]==Proto_CRC8(frame+1,24));
+    }
+    {
+        uint16_t readings[9]; unsigned i; uint32_t t=0;
+        HitDetector_Reset();
+        for(i=0;i<9;i++) readings[i]=3800;
+        for(i=0;i<3;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
+        /* A one-scan spike followed by recovery must not count. */
+        readings[0]=2400; assert(HitDetector_Update(readings,t)==0);t+=10;
+        readings[0]=3800; assert(HitDetector_Update(readings,t)==0);t+=10;
+        /* Common dimming and two simultaneous low sensors are rejected. */
+        for(i=0;i<9;i++) readings[i]=2400;
+        for(i=0;i<3;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
+        for(i=0;i<9;i++) readings[i]=3800;
+        readings[0]=readings[1]=2400;
+        for(i=0;i<4;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
+        /* Invalid ADC samples interrupt candidate confirmation. */
+        readings[1]=3800; assert(HitDetector_Update(readings,t)==0);t+=10;
+        readings[8]=65535; assert(HitDetector_Update(readings,t)==0);t+=10;
+        readings[8]=3800;
+        assert(HitDetector_Update(readings,t)==0);t+=10;
+        assert(HitDetector_Update(readings,t)==0);t+=10;
+        assert(HitDetector_Update(readings,t)==1);t+=10;
+        for(i=0;i<5;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
+        /* A held beam at boot cannot count before a normal baseline. */
+        HitDetector_Reset();
+        for(i=0;i<5;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
+        /* No reference signal and small offsets cannot cause hits. */
+        for(i=0;i<9;i++) readings[i]=0;
+        for(i=0;i<4;i++,t+=10) assert(HitDetector_Update(readings,t)==0);
     }
     puts("control and protocol checks passed");
     return 0;

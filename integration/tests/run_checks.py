@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory() as work:
         subprocess.run(['cc','-std=c99','-Wall','-Wextra','-Wno-unused-but-set-variable',
             f'-DHIT_DETECTION_ENABLED={enabled}', '-I'+str(work), '-I'+str(firmware),
             str(root/'tests/test_control.c'), str(firmware/'motor.c'),
-            str(firmware/'game.c'), str(firmware/'protocol.c'), '-o',str(binary)],check=True)
+            str(firmware/'game.c'), str(firmware/'hit_detector.c'), str(firmware/'protocol.c'), '-o',str(binary)],check=True)
         subprocess.run([str(binary)],check=True)
 project=ET.parse(root/'Integration.ewp').getroot()
 for node in project.findall('file/name'):

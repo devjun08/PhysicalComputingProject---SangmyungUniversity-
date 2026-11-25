@@ -11,13 +11,16 @@
 #define MOTOR_LEAVE_MS 300U
 #define MOTOR_CENTER_TRIM_MS 0
 #define SENSOR_PERIOD_MS 10U
-/* Opt in only after measuring real CdS levels; ADC telemetry is always enabled. */
+/* Conservative relative detection: compare one channel against the other eight. */
 #ifndef HIT_DETECTION_ENABLED
-#define HIT_DETECTION_ENABLED 0
+#define HIT_DETECTION_ENABLED 1
 #endif
-#define HIT_THRESHOLD 3000U
-#define HIT_RELEASE_THRESHOLD 2500U
-#define HIT_ACTIVE_HIGH 1
+#define HIT_RATIO_PERCENT 75U
+#define HIT_RELEASE_PERCENT 90U
+#define HIT_PEER_TOLERANCE_PERCENT 15U
+#define HIT_CONFIRM_SAMPLES 3U
+#define HIT_RELEASE_SAMPLES 3U
+#define HIT_REFERENCE_MIN 128U
 /* Original servo test only established 90 degrees. Confirm mechanical poses. */
 #define SERVO_STAND_ANGLE 90U
 #define SERVO_DOWN_ANGLE 90U
