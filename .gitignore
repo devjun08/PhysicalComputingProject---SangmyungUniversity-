@@ -64,3 +64,10 @@ dist/
 !.env.example
 .pio/
 __pycache__/
+
+# IAR integration: external SPL package and generated local output
+integration/Libraries/
+integration/Debug/
+integration/Release/
+integration/settings/
+*.dep

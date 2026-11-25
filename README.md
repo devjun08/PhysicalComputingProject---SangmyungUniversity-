@@ -17,7 +17,7 @@
 
 ### 준엽 · 서보 모터
 
-IAR EWARM에서 [FINAL.eww](individual/junyeop/SurboMotor_Final/FINAL.eww)를 열면 `ADC.ewp`가 연결됩니다. STM32F4 SPL의 `Libraries/`는 프로젝트 파일 옆에 둡니다. 현재 소스에는 `Servo_Init`, `Servo_SetAngle`, `LED_Init`, `DelayMs`의 구현이 없고, 프로젝트의 STM32F411RE 대상 설정과 기존 MCU 매크로 및 startup 설정도 일치하지 않습니다.
+IAR EWARM에서 [FINAL.eww](individual/junyeop/SurboMotor_Final/FINAL.eww)를 열면 `ADC.ewp`가 연결됩니다. STM32F4 SPL의 `Libraries/`는 프로젝트 파일 옆에 둡니다. 최신 코드는 PB9(TIM4_CH4)에서 SG90에 90도 PWM을 출력합니다. 통합 코드도 같은 핀과 타이머를 사용합니다.
 
 ### 시현 · CdS 센서 입력
 
@@ -29,4 +29,6 @@ USART2는 ST-LINK 가상 COM을 통해 115200 bps, 8-N-1로 통신합니다. MAT
 
 ## 팀 통합
 
-[integration/](integration/)은 팀 통합 작업용 폴더입니다. 현재 등록된 통합 소스는 없습니다.
+[통합 코드 실행 안내](integration/README.md)를 먼저 읽어 주세요. `integration/Integration.eww`를 IAR에서 열어 모터 원점 찾기·중앙 정렬·순찰, ADC 9채널, PC 통신을 함께 실행합니다. 기존 핀 배정과 개인 작업 원본은 유지했습니다.
+
+서보는 기존 PB9(TIM4_CH4) 드라이버를 연결했습니다. 기립·도복 각도 확인과 센서 기준값 실측 전까지 피격 판정은 기본 비활성입니다. 준비물, 배선표, 라이브러리 설치, 빌드·보드 기록, MATLAB/Python 실행 및 오류 해결은 위 안내에 정리했습니다.
