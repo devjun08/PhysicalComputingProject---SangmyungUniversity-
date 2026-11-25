@@ -53,3 +53,14 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Local files and build directories
+.DS_Store
+Thumbs.db
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.pio/
+__pycache__/
