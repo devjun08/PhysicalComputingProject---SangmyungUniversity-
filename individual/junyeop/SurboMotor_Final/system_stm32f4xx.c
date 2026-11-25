@@ -284,6 +284,11 @@
   * @{
   */
 
+/* Keep the HSI reset clock for the STM32F411 servo test. */
+#if defined (STM32F411xE)
+  uint32_t SystemCoreClock = HSI_VALUE;
+#endif
+
 #if defined (STM32F40_41xxx)
   uint32_t SystemCoreClock = 168000000;
 #endif /* STM32F40_41xxx */
@@ -306,7 +311,9 @@
   * @{
   */
 
+#if !defined (STM32F411xE)
 static void SetSysClock(void);
+#endif
 
 #if defined (DATA_IN_ExtSRAM) || defined (DATA_IN_ExtSDRAM)
 static void SystemInit_ExtMemCtl(void); 
@@ -358,7 +365,9 @@ void SystemInit(void)
          
   /* Configure the System clock source, PLL Multiplier and Divider factors, 
      AHB/APBx prescalers and Flash settings ----------------------------------*/
+#if !defined (STM32F411xE)
   SetSysClock();
+#endif
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
@@ -460,6 +469,8 @@ void SystemCoreClockUpdate(void)
   * @param  None
   * @retval None
   */
+/* The original PLL helper targets other MCUs and is not used here. */
+#if !defined (STM32F411xE)
 static void SetSysClock(void)
 {
 /******************************************************************************/
@@ -562,6 +573,8 @@ static void SetSysClock(void)
   }
 
 }
+#endif /* !STM32F411xE */
+
 
 /**
   * @brief  Setup the external memory controller. Called in startup_stm32f4xx.s 

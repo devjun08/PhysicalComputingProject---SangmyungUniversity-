@@ -236,7 +236,7 @@
                 <option>
                     <name>CCDefines</name>
                     <state>USE_STDPERIPH_DRIVER</state>
-                    <state>STM32F40_41xxx</state>
+                    <state>STM32F411xE</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -1197,7 +1197,7 @@
                 </option>
                 <option>
                     <name>OGChipSelectEditMenu</name>
-                    <state></state>
+                    <state>STM32F411RE	ST STM32F411RE</state>
                 </option>
                 <option>
                     <name>GenLowLevelInterface</name>
@@ -1355,6 +1355,8 @@
                 <option>
                     <name>CCDefines</name>
                     <state>NDEBUG</state>
+                    <state>USE_STDPERIPH_DRIVER</state>
+                    <state>STM32F411xE</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -1475,7 +1477,10 @@
                 </option>
                 <option>
                     <name>CCIncludePath2</name>
-                    <state></state>
+                    <state>$PROJ_DIR$</state>
+                    <state>$PROJ_DIR$\Libraries\CMSIS\Device\ST\STM32F4xx\Include</state>
+                    <state>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\inc</state>
+                    <state>$PROJ_DIR$\Libraries\CMSIS\Include</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -1903,7 +1908,7 @@
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state></state>
+                    <state>$TOOLKIT_DIR$/config/linker/ST/stm32f411xE.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>
@@ -2239,16 +2244,7 @@
         <name>$PROJ_DIR$\main.c</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\Libraries\CMSIS\Device\ST\STM32F4xx\Source\Templates\iar\startup_stm32f40_41xxx.s</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_adc.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_exti.c</name>
+        <name>$PROJ_DIR$\startup_stm32f411xe.s</name>
     </file>
     <file>
         <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c</name>
@@ -2258,9 +2254,6 @@
     </file>
     <file>
         <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_syscfg.c</name>
     </file>
     <file>
         <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c</name>
