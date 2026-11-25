@@ -4,7 +4,7 @@
 #include "stm32f4xx.h"
 
 /* 표적에 장착한 뒤 기립·도복 위치를 각각 확인해서 조정한다. */
-#define SERVO_STAND_ANGLE 90U
+#define SERVO_STAND_ANGLE 0U
 #define SERVO_DOWN_ANGLE  90U
 
 /* 보드의 PA5 LED를 GPIO 출력으로 설정한다. */
@@ -67,7 +67,7 @@ static void PWM_TIM4_Configuration(void)
     TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 }
 
-/* 0~180도를 1000~2000µs 펄스로 바꾼다. 90도는 1500µs다. */
+/* 강의 SG90 실습 범위: 0~180도를 500~2400µs로 환산한다. */
 static void Servo_SetAngle(uint16_t angle)
 {
     if (angle > 180U)
@@ -75,7 +75,7 @@ static void Servo_SetAngle(uint16_t angle)
         angle = 180U;
     }
 
-    TIM_SetCompare4(TIM4, 1000U + (1000U * angle) / 180U);
+    TIM_SetCompare4(TIM4, 500U + (1900U * angle) / 180U);
 }
 
 void Servo_Stand(void)
