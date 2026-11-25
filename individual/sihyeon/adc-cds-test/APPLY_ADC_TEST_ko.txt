@@ -1,0 +1,64 @@
+﻿USART 기존 프로젝트에서 CdS 1개를 테스트하는 적용 파일
+
+[적용 위치]
+이 압축파일은 독립 프로젝트가 아닙니다. 기존 USART.ewp가 있는 프로젝트 폴더에 적용합니다.
+라이브러리 경로는 사용자의 원래 설치 위치를 계속 사용합니다.
+
+1. IAR에서 프로젝트를 닫습니다.
+2. 기존 main.c, system_stm32f4xx.c, USART.ewp를 별도 위치에 백업합니다.
+3. 이 압축 안의 파일을 기존 USART.ewp가 있는 폴더에 풀고 같은 이름 파일은 덮어씁니다.
+4. 기존 USART.eww를 다시 열고 Debug 구성을 선택합니다.
+5. Rebuild All을 실행합니다.
+6. Download and Debug 후 Go로 실행합니다.
+
+[회로 — USB를 뺀 상태에서 배선]
+일반 a~e / f~j 브레드보드 기준이며 a~e 구역을 사용합니다.
+- 10k옴 저항: c10과 c15
+- CdS 센서: e15와 e20
+- 보드 3V3: a10
+- 보드 GND: a20
+- 보드 A0(PA0): a15
+같은 15번 줄의 a15, c15, e15는 내부 연결됩니다. 회로에는 3.3V를 사용합니다.
+
+[Watch에 추가]
+ADC1_data: 센서 원시값 0~4095
+ADC1_voltage: 3.3V 기준으로 환산한 근사 전압, 단위 mV
+adc_cnt: 측정 횟수, 실행 중 계속 증가
+adc_error: 정상 0 / 변환 대기 시간 초과 1
+clock_hz: 이 테스트의 정상 리셋 경로에서 16000000 예상
+
+[확인]
+센서를 손으로 가리면 값이 올라가고 빛을 비추면 내려가는 방향입니다.
+레이저는 처음에는 약 1초 비추며 변화를 확인합니다.
+실행 중 Watch 갱신이 안 되면 빛을 비춘 상태로 잠깐 정지해서 값을 보고 다시 실행합니다.
+기존 FND 출력은 이 main에서 사용하지 않습니다.
+
+[확인된 원본 상태와 수정 내용]
+- 원본 main은 USART 송수신 코드가 아니라 PC0/ADC_Channel_10을 읽는 ADC+FND 예제였습니다.
+- 테스트 입력을 앞서 안내한 배선과 맞도록 PA0/ADC_Channel_0으로 바꿨습니다.
+- GPIO/RCC/ADC .c와 ADC 헤더는 원래 프로젝트에 등록되어 있어 추가하지 않았습니다.
+- 기기/링커/플래시 로더는 원래 F411RE 설정이지만, Debug 전처리 정의는 STM32F40_41xxx였습니다. STM32F411xE로 맞췄습니다.
+- F405/407 startup 참조를 동봉한 F411용 IAR startup으로 교체했습니다.
+- 헤더 검색의 프로젝트 폴더 항목은 $PROJ_DIR$로 바꿨습니다. 나머지 라이브러리 경로는 유지했습니다.
+- 원본 시스템 코드의 SetSysClock 호출은 주석 처리되어 있었습니다. HSI 리셋 클럭을 유지하고 F411용 SystemCoreClock 초기값을 추가했습니다.
+- 원본에 남은 다른 MCU용 PLL 함수는 F411 빌드에서 제외했습니다. 이 테스트에서는 PLL로 100MHz를 설정하지 않습니다.
+- 폴링 방식으로 ADC 값을 읽으므로 ADC 인터럽트를 등록하지 않습니다.
+- main의 관찰 변수는 volatile로 선언했습니다.
+- Release 구성은 변경하지 않았습니다. Debug를 사용하세요.
+
+[오류가 나면]
+- startup_stm32f411xe.s를 찾지 못함: 이 파일이 USART.ewp 옆에 풀렸는지 확인합니다.
+- stm32f4xx.h 또는 라이브러리 .c를 찾지 못함: 압축을 원래 프로젝트 폴더에 적용했는지 확인합니다.
+- main 중복 정의: main_adc_single.c 등 다른 main 소스를 동시에 추가하지 않습니다.
+- F411 전처리 오류: IAR를 닫고 수정된 USART.ewp를 다시 열었는지, Debug 구성을 사용 중인지 확인합니다.
+
+[수행한 검증과 한계]
+- ST SPL V1.6.0 헤더와 CMSIS로 main.c 및 수정 시스템 코드의 GNU C99 문법/API 검사를 통과했습니다.
+- MCU 매크로, startup 참조, 프로젝트 옵션 변경 범위를 확인했습니다.
+- 실제 사용자의 SPL V1.9.0 파일과 IAR 컴파일러는 이 환경에 없어 전체 프로젝트 빌드/링크/어셈블/다운로드/실물 동작은 검증하지 않았습니다.
+- ZIP에는 외부 Libraries 폴더와 IAR 툴체인이 포함되지 않습니다.
+
+[동봉 startup의 출처]
+STMicroelectronics 공식 CMSIS Device F4 저장소의 수정하지 않은 IAR startup입니다.
+https://github.com/STMicroelectronics/cmsis-device-f4/blob/master/Source/Templates/iar/startup_stm32f411xe.s
+해당 startup의 Apache-2.0 라이선스 전문을 ST_CMSIS_LICENSE.md에 동봉했습니다.
