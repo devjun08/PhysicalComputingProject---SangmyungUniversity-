@@ -13,3 +13,5 @@ STM32F4 SPL V1.9.0의 `Libraries/`를 `Servo90.ewp` 옆에 두고 IAR EWARM에�
 PWM 수업 자료의 SG90 실습 배선과 90° 기준 펄스를 적용했습니다. 16MHz HSI에서 TIM4 카운터를 1µs 단위로 설정하며, PB9는 20ms마다 1.5ms 동안 High가 됩니다. 이 값은 서보 축의 기준 위치 명령입니다. 표적이 눕는 방향은 서보 혼의 장착 각도에 따라 달라집니다.
 
 TIM4는 서보 PWM을 출력하고, 강의 예제의 TIM2 업데이트 인터럽트는 PA5 LED를 500ms마다 토글합니다.
+
+시작할 때 `Servo_Stand()`가 기립 위치를 설정합니다. `Servo_Down()`을 호출하면 도복 위치로 이동합니다. 두 위치의 초기값은 모두 90°이며, 표적을 장착한 뒤 `main.c`의 `SERVO_STAND_ANGLE`과 `SERVO_DOWN_ANGLE`을 실제 위치에 맞게 조정합니다.

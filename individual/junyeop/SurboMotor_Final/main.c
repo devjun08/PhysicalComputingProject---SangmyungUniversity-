@@ -3,6 +3,10 @@
  */
 #include "stm32f4xx.h"
 
+/* 표적에 장착한 뒤 기립·도복 위치를 각각 확인해서 조정한다. */
+#define SERVO_STAND_ANGLE 90U
+#define SERVO_DOWN_ANGLE  90U
+
 /* 보드의 PA5 LED를 GPIO 출력으로 설정한다. */
 static void LED_init(void)
 {
@@ -58,9 +62,30 @@ static void PWM_TIM4_Configuration(void)
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OCInitStructure.TIM_Pulse = 1500; /* 1500 × 1µs = 1.5ms, SG90의 90도 위치 명령 */
+    TIM_OCInitStructure.TIM_Pulse = 0;
     TIM_OC4Init(TIM4, &TIM_OCInitStructure);
-    TIM_Cmd(TIM4, ENABLE);
+    TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
+}
+
+/* 0~180도를 1000~2000µs 펄스로 바꾼다. 90도는 1500µs다. */
+static void Servo_SetAngle(uint16_t angle)
+{
+    if (angle > 180U)
+    {
+        angle = 180U;
+    }
+
+    TIM_SetCompare4(TIM4, 1000U + (1000U * angle) / 180U);
+}
+
+void Servo_Stand(void)
+{
+    Servo_SetAngle(SERVO_STAND_ANGLE);
+}
+
+void Servo_Down(void)
+{
+    Servo_SetAngle(SERVO_DOWN_ANGLE);
 }
 
 /* TIM2의 업데이트 인터럽트가 LED 반전 시점을 결정한다. */
@@ -105,6 +130,10 @@ int main(void)
     Servo_GPIO_init();
     TIM4_Configuration();
     PWM_TIM4_Configuration();
+    Servo_Stand();
+    /* 첫 PWM 주기부터 기립 위치의 펄스 폭을 적용한다. */
+    TIM_GenerateEvent(TIM4, TIM_EventSource_Update);
+    TIM_Cmd(TIM4, ENABLE);
     TIM2_Configuration(500);
 
     /* 서보 PWM은 TIM4 하드웨어가 출력하고, LED는 TIM2 인터럽트가 처리한다. */
