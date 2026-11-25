@@ -15,7 +15,6 @@ void Comm_ReportHit(uint8_t value, uint16_t ms) { ++hits; zone=value; reaction=m
 void Servo_Init(void) {}
 void Servo_Stand(void) {}
 void Servo_Down(void) { ++down_count; }
-int Servo_Available(void) { return 1; }
 static void home(uint32_t base)
 {
     mock_switches=0; Game_Command(CMD_START,base);

@@ -21,10 +21,9 @@
 #define HIT_CONFIRM_SAMPLES 3U
 #define HIT_RELEASE_SAMPLES 3U
 #define HIT_REFERENCE_MIN 128U
-/* Original servo test only established 90 degrees. Confirm mechanical poses. */
+/* Match the individual Servo_Stand/Servo_Down defaults; adjust installed poses here. */
 #define SERVO_STAND_ANGLE 90U
 #define SERVO_DOWN_ANGLE 90U
-#define SERVO_POSES_CONFIRMED 0
 #define HIT_BRAKE_MS 100U
 #define TARGET_DOWN_MS 1500U
 #define TARGET_RECOVER_MS 300U

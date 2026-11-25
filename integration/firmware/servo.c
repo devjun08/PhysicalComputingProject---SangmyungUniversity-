@@ -42,12 +42,9 @@ static void PWM_TIM4_Configuration(void)
     TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
     TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
     TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-    TIM_OCInitStructure.TIM_Pulse = 1500; /* SG90 90 degrees: 1.5 ms. */
+    TIM_OCInitStructure.TIM_Pulse = 0;
     TIM_OC4Init(TIM4, &TIM_OCInitStructure);
     TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
-    Servo_SetAngle(SERVO_STAND_ANGLE);
-    TIM_GenerateEvent(TIM4, TIM_EventSource_Update);
-    TIM_Cmd(TIM4, ENABLE);
 }
 
 void Servo_Init(void)
@@ -55,6 +52,10 @@ void Servo_Init(void)
     Servo_GPIO_init();
     TIM4_Configuration();
     PWM_TIM4_Configuration();
+    Servo_Stand();
+    /* Apply the standing pulse before the first PWM cycle, as in the individual test. */
+    TIM_GenerateEvent(TIM4, TIM_EventSource_Update);
+    TIM_Cmd(TIM4, ENABLE);
 }
 
 void Servo_SetAngle(uint16_t angle)
@@ -67,4 +68,3 @@ void Servo_SetAngle(uint16_t angle)
 
 void Servo_Stand(void) { Servo_SetAngle(SERVO_STAND_ANGLE); }
 void Servo_Down(void) { Servo_SetAngle(SERVO_DOWN_ANGLE); }
-int Servo_Available(void) { return SERVO_POSES_CONFIRMED; }

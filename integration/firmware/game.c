@@ -55,8 +55,8 @@ void Game_Update(uint32_t now)
     switch (state) {
     case ST_HIT:
         if (now - entered >= HIT_BRAKE_MS) {
-            if (Servo_Available()) { Servo_Down(); enter(ST_DOWN, now); }
-            else enter(ST_RECOVER, now); /* Detect hits even before pose calibration. */
+            Servo_Down();
+            enter(ST_DOWN, now);
         }
         break;
     case ST_DOWN:

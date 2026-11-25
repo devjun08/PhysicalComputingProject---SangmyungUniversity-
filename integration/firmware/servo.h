@@ -6,5 +6,4 @@ void Servo_Init(void);
 void Servo_SetAngle(uint16_t angle);
 void Servo_Stand(void);
 void Servo_Down(void);
-int Servo_Available(void);
 #endif

@@ -178,7 +178,7 @@ with serial.Serial(PORT, 115200, timeout=1) as board:
 | ADC 오류로 GAMEOVER | 센서 변환 시간초과. IAR에서 `adc_error` 확인 |
 | 원점 찾기 중 GAMEOVER | 아래 `Motor_Error()` 코드와 스위치 방향/접점 확인 |
 | 피격이 잡히지 않음 | 한 채널만 충분히 내려가는지, 나머지 8개가 서로 비슷한지 확인. 7절 참고 |
-| 피격은 잡히지만 서보가 눕지 않음 | 각도 확인 전에는 도복 생략. 7절의 서보 설정 확인 |
+| 피격은 잡히지만 서보가 눕지 않음 | 기립·도복 기본 각도가 모두 90°인지 확인. 7절의 각도를 실제 장착 위치에 맞춤 |
 
 `Motor_Error()` 오류 코드:
 
@@ -202,9 +202,9 @@ with serial.Serial(PORT, 115200, timeout=1) as board:
 
 최신 준엽 개인 코드의 SG90 드라이버를 통합했습니다. **PB9 / TIM4_CH4**를 그대로 사용하고, 기존과 같이 부팅 시 90°(1.5ms 펄스)를 출력합니다. 모터 TIM1, 시간 관리 TIM2와 충돌하지 않습니다. 서보 전원과 공통 GND도 기존 배선을 유지합니다.
 
-원본은 90° 테스트까지만 있어 실제 표적의 기립·도복 각도는 알 수 없습니다. `config.h`의 `SERVO_STAND_ANGLE`, `SERVO_DOWN_ANGLE`을 장착 상태에 맞게 설정하고 `SERVO_POSES_CONFIRMED`를 `1`로 바꿉니다. 기본값은 둘 다 원본의 90°이며, 임의로 다른 각도로 꺾지 않습니다. `Servo_SetAngle()`은 원본과 같은 0~180° / 1~2ms 범위로 제한합니다.
+개인 코드의 `Servo_Stand()`와 `Servo_Down()` 동작을 통합 게임에도 연결했습니다. `config.h`의 `SERVO_STAND_ANGLE`, `SERVO_DOWN_ANGLE`을 장착 상태에 맞게 설정합니다. 별도의 활성화 플래그는 없습니다. 기본값은 둘 다 원본의 90°이며, 임의로 다른 각도로 꺾지 않습니다. `Servo_SetAngle()`은 원본과 같은 0~180° / 1~2ms 범위로 제한합니다.
 
-초기화 함수도 최신 개인 코드의 강의자료 스타일을 따릅니다. `Servo_GPIO_init()` → `TIM4_Configuration()` → `PWM_TIM4_Configuration()` 순서로 설정하며, 16MHz에서 프리스케일러는 `16 - 1`, 주기는 `20000 - 1`, 기본 90° 펄스는 1500입니다. 통합 초기화에서는 설정한 기립 각도를 첫 PWM 출력 전에 반영합니다.
+초기화 함수도 최신 개인 코드의 강의자료 스타일을 따릅니다. `Servo_GPIO_init()` → `TIM4_Configuration()` → `PWM_TIM4_Configuration()` 순서로 설정하며, 16MHz에서 프리스케일러는 `16 - 1`, 주기는 `20000 - 1`, 초기 비교값은 개인 코드처럼 0이며, 90° 명령은 1500 펄스로 변환합니다. 통합 초기화에서는 설정한 기립 각도를 첫 PWM 출력 전에 반영합니다.
 
 개인 테스트의 TIM2 500ms LED 인터럽트는 통합하지 않습니다. 통합 코드에서는 이미 `timebase.c`가 TIM2를 1ms 시간 관리에 사용하므로, 중복 초기화하면 모터 시간 계산과 통신 주기가 바뀝니다. PA5 핀 배정은 그대로 유지합니다.
 
@@ -224,7 +224,7 @@ with serial.Serial(PORT, 115200, timeout=1) as board:
 
 조정값은 `config.h`의 `HIT_RATIO_PERCENT`, `HIT_RELEASE_PERCENT`, `HIT_PEER_TOLERANCE_PERCENT`, `HIT_CONFIRM_SAMPLES`, `HIT_RELEASE_SAMPLES`에 모았습니다. 보수적인 판정을 원하면 피격 비율을 낮추거나 연속 확인 횟수를 늘립니다. `HIT_DETECTION_ENABLED=0`이면 피격만 끄고 ADC 통신은 유지합니다.
 
-피격은 서보 각도 확인 여부와 독립적으로 집계하고 모터를 정지합니다. `SERVO_POSES_CONFIRMED=0`이면 임의의 도복을 하지 않고 100ms 정지 후 RECOVER에서 300ms 기다렸다가 순찰합니다. 각도를 설정하고 `SERVO_POSES_CONFIRMED=1`로 바꾸면 HIT 100ms → DOWN 1500ms → RECOVER 300ms 순서로 서보가 동작합니다.
+피격이 확정되면 모터 정지 → HIT 100ms → `Servo_Down()` 호출 → DOWN 1500ms → `Servo_Stand()` 호출 → RECOVER 300ms → 순찰 순서로 동작합니다. **두 기본 각도가 모두 90°라면 서보 명령은 실행되지만 실제 자세는 바뀌지 않습니다.** 실제 기립·도복 각도는 임의 추정하지 않았습니다.
 
 반응 시간은 순찰 상태 진입부터 피격 확정까지의 ms이며 65535ms로 상한 처리합니다. 피격 횟수는 부팅 이후 누적되는 8비트 값(255 다음 0)입니다. 자동 게임 종료를 쓰려면 `GAME_DURATION_MS`를 설정합니다. 제한시간은 호밍 완료 후부터 계산합니다.
 
