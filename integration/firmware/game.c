@@ -1,10 +1,11 @@
-/* Application state machine. All entry points are called from main, never ISR. */
+/* main 루프에서 게임 상태와 상태 진입 시간을 관리한다. */
 #include "game.h"
 #include "config.h"
 #include "comm.h"
 #include "motor.h"
 #include "servo.h"
 #include "hit_detector.h"
+/* ================= 게임 상태 ================= */
 static uint8_t state, homing;
 static uint32_t entered, started;
 static void enter(uint8_t next, uint32_t now)
@@ -21,6 +22,7 @@ void Game_Init(uint32_t now)
     HitDetector_Reset();
     Motor_Stop(); Servo_Stand(); enter(ST_IDLE, now);
 }
+/* ---------- PC 시작, 종료, 속도 명령 ---------- */
 void Game_Command(int command, uint32_t now)
 {
     static const uint8_t speeds[5] = {30U, 40U, 50U, 60U, 70U};
@@ -29,10 +31,11 @@ void Game_Command(int command, uint32_t now)
         Motor_SetDuty(speeds[command - CMD_SPEED1]);
     else if (command == CMD_START && !homing &&
              (state == ST_IDLE || state == ST_GAMEOVER)) {
-        /* Homing stays IDLE on wire: existing PC protocol has no HOMING state. */
+        /* 호밍 중에는 PC에 IDLE을 보내고, 중앙에 도착하면 PATROL로 바꾼다. */
         HitDetector_Reset(); Servo_Stand(); Motor_Home(now); homing = 1U; enter(ST_IDLE, now);
     }
 }
+/* ---------- 모터 상태와 경과 시간에 따른 게임 진행 ---------- */
 void Game_Update(uint32_t now)
 {
     Motor_Update(now);
@@ -52,6 +55,7 @@ void Game_Update(uint32_t now)
         finish(now); return;
     }
 #endif
+    /* 피격 후 HIT(정지) → DOWN(도복) → RECOVER(기립) → PATROL(순찰) */
     switch (state) {
     case ST_HIT:
         if (now - entered >= HIT_BRAKE_MS) {
@@ -68,6 +72,7 @@ void Game_Update(uint32_t now)
     default: break;
     }
 }
+/* ---------- ADC 전송과 순찰 중 피격 처리 ---------- */
 void Game_Sensors(const uint16_t values[9], uint32_t now)
 {
     uint8_t zone;

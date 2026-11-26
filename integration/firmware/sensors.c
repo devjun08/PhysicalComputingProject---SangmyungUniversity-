@@ -10,6 +10,7 @@ static void ShortWait(uint32_t count)
     }
 }
 
+/* ---------- CdS 9채널 GPIO 및 ADC1 초기화 ---------- */
 void Sensors_Init(void)
 {
     GPIO_InitTypeDef gpio;
@@ -45,6 +46,7 @@ void Sensors_Init(void)
     ShortWait(10000U);
 }
 
+/* ---------- 채널 하나를 변환하고 완료 플래그 확인 ---------- */
 static uint16_t ReadADCChannel(uint8_t channel)
 {
     uint32_t started = Timebase_Now();
@@ -63,6 +65,7 @@ static uint16_t ReadADCChannel(uint8_t channel)
 }
 
 
+/* ---------- 표적 번호 순서대로 9채널 읽기 ---------- */
 uint8_t Sensors_Read(uint16_t values[9])
 {
     static const uint8_t channels[9] = {ADC_Channel_0, ADC_Channel_1,

@@ -14,6 +14,7 @@ uint8_t Proto_CRC8(const uint8_t *data, uint32_t len)
     return crc;
 }
 
+/* ---------- 상태와 ADC를 바이트 순서에 맞춰 패킹 ---------- */
 uint32_t Proto_BuildFrame(const ProtoStatus *st, uint8_t out[PROTO_FRAME_LEN])
 {
     uint32_t i = 0;

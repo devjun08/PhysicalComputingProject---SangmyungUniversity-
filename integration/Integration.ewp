@@ -1133,7 +1133,7 @@
         <name>$PROJ_DIR$\firmware\main.c</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\..\..\..\..\Documents\stsw-stm32065_v1-9-0\STM32F4xx_DSP_StdPeriph_Lib_V1.9.0\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c</name>
+        <name>$PROJ_DIR$\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c</name>
     </file>
     <file>
         <name>$PROJ_DIR$\firmware\motor.c</name>

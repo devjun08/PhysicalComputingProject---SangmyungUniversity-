@@ -37,7 +37,7 @@ with tempfile.TemporaryDirectory() as work:
         subprocess.run([str(binary)],check=True)
 project=ET.parse(root/'Integration.ewp').getroot()
 for node in project.findall('file/name'):
-    relative=node.text.replace('$PROJ_DIR$/','')
+    relative=node.text.replace('\\', '/').removeprefix('$PROJ_DIR$/')
     if not relative.startswith('Libraries/'):
         assert (root/relative).is_file(), relative
 sources=[p.read_text() for p in firmware.glob('*.c')]

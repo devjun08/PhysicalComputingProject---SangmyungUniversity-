@@ -6,6 +6,7 @@
 #include "config.h"
 #include "servo.h"
 
+/* ---------- 서보 출력 (PB9: TIM4_CH4, AF2) ---------- */
 static void Servo_GPIO_init(void)
 {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -20,6 +21,7 @@ static void Servo_GPIO_init(void)
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_TIM4);
 }
 
+/* ---------- TIM4: 1µs 카운트, 20ms 반복 주기 ---------- */
 static void TIM4_Configuration(void)
 {
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -34,6 +36,7 @@ static void TIM4_Configuration(void)
     TIM_TimeBaseInit(TIM4, &TIM_TimeBaseStructure);
 }
 
+/* ---------- 채널 4 PWM 및 비교값 프리로드 설정 ---------- */
 static void PWM_TIM4_Configuration(void)
 {
     TIM_OCInitTypeDef TIM_OCInitStructure;
@@ -47,6 +50,7 @@ static void PWM_TIM4_Configuration(void)
     TIM_OC4PreloadConfig(TIM4, TIM_OCPreload_Enable);
 }
 
+/* ================= 서보 초기화 ================= */
 void Servo_Init(void)
 {
     Servo_GPIO_init();
@@ -58,6 +62,7 @@ void Servo_Init(void)
     TIM_Cmd(TIM4, ENABLE);
 }
 
+/* ---------- 각도를 PWM 펄스 폭으로 환산 (0~180°, 1000~2000µs) ---------- */
 void Servo_SetAngle(uint16_t angle)
 {
     uint32_t pulse_us;
