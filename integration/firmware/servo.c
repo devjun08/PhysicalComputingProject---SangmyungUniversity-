@@ -67,7 +67,7 @@ void Servo_SetAngle(uint16_t angle)
 {
     uint32_t pulse_us;
     if (angle > 180U) angle = 180U;
-    pulse_us = 1000U + (1000U * angle) / 180U;
+    pulse_us = 500U + (1900U * angle) / 180U;
     TIM_SetCompare4(TIM4, pulse_us);
 }
 

@@ -26,7 +26,7 @@
 /* ================= 서보 위치 및 게임 시간 ================= */
 /* Keep the installed standing reference and command 30 degrees of travel. */
 #define SERVO_STAND_ANGLE 90U
-#define SERVO_DOWN_ANGLE (SERVO_STAND_ANGLE + 30U)
+#define SERVO_DOWN_ANGLE (SERVO_STAND_ANGLE + 60U)
 #define HIT_BRAKE_MS 100U
 #define TARGET_DOWN_MS 1500U
 #define TARGET_RECOVER_MS 300U
