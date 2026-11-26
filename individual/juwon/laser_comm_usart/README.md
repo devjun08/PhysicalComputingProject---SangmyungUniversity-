@@ -1,5 +1,5 @@
 > **먼저 `TEST_GUIDE.md`(보드 테스트 안내서)를 봐 주세요!**
-> 이 zip은 팀 공유용이에요. `board_test/main_comm_test.c`는 통신 단독 테스트 전용이라 **팀 프로젝트에는 넣지 마세요** (main 중복).
+> 이 폴더는 통신 단독 테스트용입니다. 팀 보드 실행은 [통합 코드 안내](../../../integration/README.md)를 참고하세요.
 > `tools/check_comm.py` = Python 수신 확인, `pc_matlab/` = MATLAB 대시보드 (선택).
 
 # 레이저 사격 시스템 – PC 통신 & GUI (초안)
@@ -12,12 +12,12 @@
 |---|---|
 | `firmware/protocol.h/.c` | 패킷 정의, CRC8, 프레임 생성 (하드웨어 무관) |
 | `firmware/comm.h/.c` | USART2 인터럽트 송수신 드라이버 (PA2/PA3, ST-LINK 가상 COM) |
-| `firmware/main_comm_test.c` | **보드 하나로** GUI를 테스트하는 가짜 게임 main |
-| `matlab/LaserDashboard.m` | PC 대시보드 (조준경 3×3, 탄착 분포, ADC 9채널, 반응속도, CSV 저장) |
-| `matlab/ls_parse_frames.m`, `ls_crc8.m`, `ls_build_frame.m` | 파서 / CRC / 프레임 생성 |
-| `test/` | PC에서 돌리는 검증 (C로 만든 프레임 → MATLAB 파서) |
+| `board_test/main_comm_test.c` | **보드 하나로** GUI를 테스트하는 가짜 게임 main |
+| `pc_matlab/LaserDashboard.m` | PC 대시보드 (조준경 3×3, 탄착 분포, ADC 9채널, 반응속도, CSV 저장) |
+| `pc_matlab/ls_parse_frames.m`, `ls_crc8.m`, `ls_build_frame.m` | 파서 / CRC / 프레임 생성 |
+| `tools/check_comm.py` | PC에서 시리얼 프레임과 CRC 수신 확인 |
 
-## 통신 규격 (팀 합의 필요)
+## 통신 규격
 
 - **115200 bps, 8-N-1**, USART2 (PA2 TX / PA3 RX), CP2102 모듈 없음
 - 클럭은 수업처럼 **16MHz (HSI)** 를 전제로 작성함
@@ -75,7 +75,7 @@ while (1) {
 
 **보드 없이 GUI만 시연**
 ```matlab
-cd matlab
+cd pc_matlab
 LaserDashboard          % Port에서 '(데모: 가짜 MCU)' 선택 → Connect → 게임 시작
 ```
 
@@ -85,17 +85,15 @@ LaserDashboard          % Port에서 '(데모: 가짜 MCU)' 선택 → Connect �
 3. 굽고 MATLAB에서 `/dev/cu.usbmodem…` (맥) 또는 `COMx` (윈도우) 선택 → Connect
 4. 게임 시작 → 약 4초마다 (순찰 1.75~2.55초 + 도복·기립 1.9초) 가짜 피격이 들어오면 정상. RX가 초당 약 100씩 늘고 CRC오류·유실이 0인지 확인
 
-**PC 검증 (이미 통과)**
-```bash
-clang -std=c99 -o test/gen_frames test/gen_frames.c firmware/protocol.c && ./test/gen_frames test/frames.bin
-matlab -batch "run('test/test_parser.m'); run('test/test_dashboard.m')"
-```
+**Python으로 수신 확인**
+
+[보드 테스트 안내서](TEST_GUIDE.md)의 `tools/check_comm.py` 실행 절차를 참고하세요.
 
 ## 아직 정할 것 / 확인 안 된 것
 
 - [x] 클럭 16MHz 확정 (팀 합의: `system_stm32f4xx.c`의 `SetSysClock()` 주석 처리 → HSI 16MHz, 모든 타이머 클럭 16MHz)
       115200bps 실제 오차 약 0.08% (BRR = 8 + 11/16) → 문제 없음
-- [ ] 반응속도 시작 시점 정의 (현재 가정: 기립 완료 → 피격)
+- 통합 펌웨어는 순찰 상태 진입부터 피격 확정까지의 시간을 반응 시간으로 전송합니다.
 - [ ] 센서 번호 1~9 배치가 사수 시점과 좌우 반대인지 → `LaserDashboard.m`의 `MIRROR_LR`
 - [ ] 명중률: 총이 MCU와 연결되지 않아 빗나간 사격은 셀 수 없음
 - [ ] **실제 보드에서는 아직 빌드·동작 확인 안 함** (PC에서 문법 검사와 프로토콜 테스트만 함)
