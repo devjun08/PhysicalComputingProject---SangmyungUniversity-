@@ -29,6 +29,6 @@ USART2는 ST-LINK 가상 COM을 통해 115200 bps, 8-N-1로 통신합니다. MAT
 
 ## 팀 통합
 
-[통합 코드 실행 안내](integration/README.md)를 먼저 읽어 주세요. `integration/Integration.eww`를 IAR에서 열어 모터 원점 찾기·중앙 정렬·순찰, ADC 9채널, PC 통신을 함께 실행합니다. 팀 보드에 연결할 때는 [통합 MATLAB 대시보드](integration/pc_matlab/)에서 `LaserDashboard`를 실행합니다.
+[통합 코드 실행 안내](integration/README.md)를 먼저 읽어 주세요. `integration/Integration.eww`를 IAR에서 열어 모터 원점 찾기·중앙 정렬·순찰, ADC 9채널, PC 통신을 함께 실행합니다. 통합 모터의 PB4·PB10 리미트 스위치는 하강 엣지 EXTI 인터럽트로 감지합니다. 팀 보드에 연결할 때는 [통합 MATLAB 대시보드](integration/pc_matlab/)에서 `LaserDashboard`를 실행합니다.
 
-서보는 기존 PB9(TIM4_CH4) 드라이버를 연결했습니다. 피격은 한 센서 값이 나머지 8개 평균보다 충분히 낮아진 상태를 3회 연속 확인하는 상대 비교 방식으로 기본 활성화했습니다. 피격 시 개인 코드와 같은 `Servo_Down()` → `Servo_Stand()`를 호출합니다. 통합 코드는 기립 90°에서 도복 120°로 30° 움직이도록 명령합니다. 실제 장착 각도와 방향은 `integration/firmware/config.h`에서 맞춥니다. 준비물, 배선표, 라이브러리 설치, 빌드·보드 기록, MATLAB/Python 실행 및 오류 해결은 위 안내에 정리했습니다.
+서보는 기존 PB9(TIM4_CH4) 드라이버를 연결했습니다. 피격은 한 센서 값이 나머지 8개 평균보다 충분히 낮아진 상태를 3회 연속 확인하는 상대 비교 방식으로 기본 활성화했습니다. 피격 시 개인 코드와 같은 `Servo_Down()` → `Servo_Stand()`를 호출합니다. 통합 코드는 기립 90°에서 도복 150°로 60° 움직이도록 명령합니다. 실제 장착 각도와 방향은 `integration/firmware/config.h`에서 맞춥니다. 준비물, 배선표, 라이브러리 설치, 빌드·보드 기록, MATLAB/Python 실행 및 오류 해결은 위 안내에 정리했습니다.
